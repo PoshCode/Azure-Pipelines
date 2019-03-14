@@ -1,0 +1,17 @@
+parameters:
+  path: '$(Build.ArtifactStagingDirectory)'
+  filter: '*.*'
+  certificate: ''
+
+steps:
+- powershell: |
+    $CodeSigning = @{
+        TimestampServer = 'http://timestamp.veriSign.com/scripts/timstamp.dll'
+        Certificate = Get-Item -Path 'Cert:\LocalMachine\My\${{ parameters.certificate }}' -CodeSigningCert
+    }
+    if (!$CodeSigning.Certificate) {
+        throw 'Set-AuthenticodeSignature cannot locate code signing certificate'
+    }
+    Get-ChildItem ${{ parameters.path }} -Recurse -Filter ${{ parameters.filter }} -File |
+        Set-AuthenticodeSignature @CodeSigning
+  displayName: 'Sign Files'

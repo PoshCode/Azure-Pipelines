@@ -1,0 +1,106 @@
+parameters:
+  dependsOn: 'Build'
+  artifactName: 'Module'
+  stagingDirectory: $(Build.ArtifactStagingDirectory)
+  modulesToImport: ''
+  customRulePath: ''
+  excludeRules: '"PSShouldProcess","PSUseShouldProcessForStateChangingFunctions"'
+
+jobs:
+  - job: ScriptAnalyzer
+    dependsOn: ${{ parameters.dependsOn }}
+    workspace:
+      clean: outputs
+
+    steps:
+    - checkout: none # skip checking out code
+
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download Build Artifacts'
+      inputs:
+        artifactName: ${{ parameters.artifactName }}
+        downloadPath: ${{ parameters.stagingDirectory }}
+        itemPattern: '**/*'
+
+    - powershell: |
+        # Install PSScriptAnalyzer
+        $Policy = (Get-PSRepository PSGallery).InstallationPolicy
+        Set-PSRepository PSGallery -InstallationPolicy Trusted
+        try {
+            $PSSA = Find-Module PSScriptAnalyzer
+            if (-not (Get-Module PSScriptAnalyzer -ListAvailable | Where-Object Version -ge $PSSA.Version)) {
+                Install-Module PSScriptAnalyzer -RequiredVersion $PSSA.Version -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -AllowClobber -Verbose
+            }
+        } finally {
+            # Put Policy back so we don't needlessly change environments permanently
+            Set-PSRepository PSGallery -InstallationPolicy $Policy
+        }
+        # Make a Pester test script for PSScriptAnalyzer
+        $TestFile = New-Item $Env:TEMP\$([guid]::NewGuid())\PSScriptAnalyzer.Tests.ps1 -Type File -Force
+        "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"
+        Set-Content $TestFile.Fullname '
+        $ExcludeRules = @(${{ parameters.excludeRules }})
+        $CustomRulePath = "${{ parameters.customRulePath }}"
+        $Path = "${{ parameters.stagingDirectory }}"
+        # If there are any modules we should import, import them
+        if ($Modules = @(${{ parameters.modulesToImport }})) {
+            $Env:PSModulePath = $Path + ";" + $Env:PSModulePath
+            Import-Module $Modules
+        }
+        # Use PSSScriptAnalyzer as the name so the tests for rules show up as: PSScriptAnalyzer.RuleName
+        Describe "PSScriptAnalyzer" {
+            $Path | Should Exist
+
+            $ScriptAnalyzerConfig = @{
+                Path = $Path
+                Recurse = $true
+                IncludeDefaultRules = $true
+                ExcludeRule = $ExcludeRules
+            }
+
+            # Collect all of the rules
+            $Rules = Get-ScriptAnalyzerRule | Where-Object RuleName -notin $ExcludeRules
+            if ($CustomRulePath) {
+                $CustomRulePath | Should Exist
+
+                if ($CustomRules = Get-ScriptAnalyzerRule -CustomRulePath $CustomRulePath -RecurseCustomRulePath) {
+                    $Rules += $CustomRules
+                    $ScriptAnalyzerConfig += @{
+                        CustomRulePath = $CustomRulePath
+                        RecurseCustomRulePath = $true
+                    }
+                }
+            }
+            $Analysis = Invoke-ScriptAnalyzer @ScriptAnalyzerConfig
+            # Write out a test result for each rule, so we have a record of their passing or failing
+            foreach ($Rule in $Rules.RuleName) {
+                It "$Rule" {
+                    if ($Failures = $Analysis.Where({$_.RuleName -EQ "$Rule"})) {
+                        throw (
+                            [Management.Automation.ErrorRecord]::new(
+                                ([Exception]::new(($Failures.ForEach{$_.ScriptName + ":" + $_.Line + " " + $_.Message} -join "`n"))),
+                                "ScriptAnalyzerViolation",
+                                "SyntaxError",
+                                $Failures)
+                        )
+                    }
+                }
+            }
+        }
+        '
+
+    - task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
+      displayName: 'Pester Script Analyzer'
+      inputs:
+        scriptFolder: $(TestPath)
+        additionalModulePath: ${{ parameters.stagingDirectory }}
+        resultsFile: '$(Common.TestResultsDirectory)\ScriptAnalyzer-$(Build.SourceVersion).xml'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Script Analyzer Results'
+      inputs:
+        testResultsFormat: NUnit
+        testResultsFiles: '$(Common.TestResultsDirectory)\ScriptAnalyzer-$(Build.SourceVersion).xml'
+        searchFolder: '$(Common.TestResultsDirectory)'
+      condition: succeededOrFailed()
+

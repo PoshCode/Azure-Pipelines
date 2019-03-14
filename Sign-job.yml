@@ -1,0 +1,33 @@
+parameters:
+  dependsOn: ['Build', 'Pester', 'ScriptAnalyzer']
+  compiledArtifact: 'Compiled'
+  signedArtifact: 'Signed'
+  certificate: '4CBBCD74FE2AEBD080758A967D20ABF916872A95'
+  stagingDirectory: '$(Build.ArtifactStagingDirectory)'
+  filter: '*.*'
+
+jobs:
+  - job: Sign
+    dependsOn: ${{ parameters.dependsOn }}
+
+    steps:
+    - checkout: none # skip checking out code, we're just signing an artifact
+
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download Build Artifacts'
+      inputs:
+        artifactName: ${{ parameters.artifactName }}
+        downloadPath: '${{ parameters.stagingDirectory }}\${{ parameters.compiledArtifact }}'
+        itemPattern: '**/*'
+
+    - template: Sign-step.yml
+      parameters:
+        Path: '${{ parameters.stagingDirectory }}\${{ parameters.compiledArtifact }}'
+        Filter: ${{ parameters.filter }}
+        Certificate: ${{ parameters.certificate }}
+
+    - task: PublishPipelineArtifact@0
+      displayName: 'RePublish Signed ${{ parameters.compiledArtifact }}'
+      inputs:
+        ArtifactName: ${{ parameters.signedArtifact }}
+        targetPath: '${{ parameters.stagingDirectory }}\${{ parameters.artifactName }}'

@@ -1,0 +1,46 @@
+parameters:
+  dependsOn: 'Build'
+  artifactName: 'Module'
+  stagingDirectory: '$(Build.ArtifactStagingDirectory)'
+  testsDirectory: '$(Build.SourcesDirectory)\Tests'
+  excludeTag: 'Integration, Audit'
+
+jobs:
+  - job: Pester
+    dependsOn: ${{ parameters.dependsOn }}
+
+    steps:
+    - checkout: self # re-checkout, because we don't package tests
+      fetchDepth: 1  # we only need the current tests
+      clean: false
+
+    - task: DownloadPipelineArtifact@1
+      displayName: 'Download Build Artifacts'
+      inputs:
+        artifactName: ${{ parameters.artifactName }}
+        downloadPath: ${{ parameters.stagingDirectory }}
+        itemPattern: '**/*'
+
+    - task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
+      displayName: 'Pester Test Runner'
+      inputs:
+        scriptFolder: ${{ parameters.testsDirectory }}
+        excludeTag: ${{ parameters.excludeTag }}
+        additionalModulePath: ${{ parameters.stagingDirectory }}
+        CodeCoverageFolder: ${{ parameters.stagingDirectory }}
+        resultsFile: '$(Common.TestResultsDirectory)\Test-$(Build.SourceVersion).xml'
+        CodeCoverageOutputFile: '$(Common.TestResultsDirectory)\Coverage-$(Build.SourceVersion).xml'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: NUnit
+        testResultsFiles: '$(Common.TestResultsDirectory)\Test-$(Build.SourceVersion).xml'
+        searchFolder: '$(Common.TestResultsDirectory)'
+      condition: succeededOrFailed()
+
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish code coverage'
+      inputs:
+        summaryFileLocation: '$(Common.TestResultsDirectory)\Coverage-$(Build.SourceVersion).xml'
+      condition: succeededOrFailed()

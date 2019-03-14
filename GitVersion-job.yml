@@ -1,0 +1,42 @@
+jobs:
+  - job: Initialize
+    steps:
+    - checkout: self
+      clean: false
+      lfs: false
+      submodules: false # can be true, or recursive
+
+    - template: GitVersion-step.yml
+      parameters:
+        additionalArguments: /nocache
+
+    - powershell: |
+        echo '##vso[task.setvariable variable=Counter;isOutput=true]$(GitVersion.MajorMinorPatch)'
+        echo ("##vso[task.setvariable variable=SafeBranchName;isOutput=true]{0}" -f ('$(GitVersion.BranchName)' -replace '[\\/]','-'))
+      name: Output
+      displayName: Export Variables
+
+  - job: GitVersion
+    dependsOn: Initialize
+
+    variables:
+      BuildCount: $[counter(dependencies.version.outputs['Output.Counter'], 0)]
+      SafeBranchName: $[dependencies.version.outputs['Output.SafeBranchName']]
+
+    steps:
+    - checkout: self
+      clean: false
+      lfs: true
+      submodules: false # can be true, or recursive
+
+    - template: GitVersion-step.yml
+      parameters:
+        additionalArguments: /nocache
+
+    - powershell: |
+        foreach ($envar in Get-Item ENV:GITVERSION_*) {
+          Write-Host "INFO [task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
+          Write-Output "##vso[task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
+        }
+      name: GitVersion
+      displayName: Export GitVersion Variables

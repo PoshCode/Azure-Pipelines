@@ -1,0 +1,10 @@
+parameters:
+  updateAssemblyInfo: false
+  additionalArguments: ''
+
+steps:
+- task: gittools.gitversion.gitversion-task.GitVersion@4
+  displayName: GitVersion
+  inputs:
+    updateAssemblyInfo: ${{ parameters.updateAssemblyInfo }}
+    additionalArguments: ${{ parameters.additionalArguments }}
