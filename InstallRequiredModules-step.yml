@@ -5,5 +5,5 @@ parameters:
 steps:
 - powershell: |
     Save-Script Install-RequiredModule -Path .
-    ./Install-RequiredModule.ps1 -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}'
+    ./Install-RequiredModule.ps1 -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}' -Verbose
   displayName: 'Restore pre-requisites'
