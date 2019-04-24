@@ -23,7 +23,7 @@ jobs:
         itemPattern: '**/*'
 
     - powershell: |
-        # Install PSScriptAnalyzer
+        # Install the latest PSScriptAnalyzer (TODO: support specifying the version)
         $Policy = (Get-PSRepository PSGallery).InstallationPolicy
         Set-PSRepository PSGallery -InstallationPolicy Trusted
         try {
@@ -35,6 +35,9 @@ jobs:
             # Put Policy back so we don't needlessly change environments permanently
             Set-PSRepository PSGallery -InstallationPolicy $Policy
         }
+      displayName: "Ensure pre-requisites"
+
+    - powershell: |
         # Make a Pester test script for PSScriptAnalyzer
         $TestFile = New-Item $Env:TEMP\$([guid]::NewGuid())\PSScriptAnalyzer.Tests.ps1 -Type File -Force
         "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"

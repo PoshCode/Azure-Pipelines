@@ -1,0 +1,33 @@
+parameters:
+  specDirectory: '$(Build.SourcesDirectory)\Specs'
+  includeTag: ''
+  excludeTag: ''
+  additionalModulePaths: ''
+  codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
+  resultsFile: '$(Common.TestResultsDirectory)\Test-$(Build.SourceVersion).xml'
+  # CodeCoverageOutputFile: '$(Common.TestResultsDirectory)\Coverage-$(Build.SourceVersion).xml'
+
+steps:
+- powershell: |
+    $Options = @{
+        Path = "${{ parameters.specDirectory }}"
+        OutputFormat = "NUnitXml"
+        OutputFile = "${{ parameters.resultsFile }}"
+    }
+    if ($CodeCoverage = "${{ parameters.codeCoverageDirectory }}") {
+      $Options.CodeCoverage = $CodeCoverage
+    }
+    if ($includeTag = @(${{ parameters.includeTag }}) {
+      $Options.Tag = $includeTag
+    }
+    if ($excludeTag = @(${{ parameters.excludeTag }}) {
+      $Options.ExcludeTag = $excludeTag
+    }
+
+    if ("${{ parameters.additionalModulePaths }}") {
+      $Env:PSModulePath = "${{ parameters.additionalModulePaths }}" + ';' + $Env:PSModulePath
+    }
+
+    $TestResults = Invoke-Gherkin @Options -PassThru
+
+  displayName: Invoke-Gherkin
