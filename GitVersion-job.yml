@@ -1,5 +1,7 @@
 jobs:
   - job: Initialize
+    pool:
+      vmImage: windows-2019
     steps:
     - checkout: self
       clean: false
@@ -17,6 +19,8 @@ jobs:
       displayName: Export Variables
 
   - job: GitVersion
+    pool:
+      vmImage: windows-2019
     dependsOn: Initialize
 
     variables:
