@@ -28,7 +28,7 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
-    - template: Gherklin-step.yml
+    - template: Gherkin-step.yml
       parameters:
         specDirectory: ${{ parameters.specDirectory }}
         includeTag: ${{ parameters.includeTag }}

@@ -29,5 +29,4 @@ steps:
     }
 
     $TestResults = Invoke-Gherkin @Options -PassThru
-
   displayName: Invoke-Gherkin
