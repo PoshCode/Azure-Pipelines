@@ -9,9 +9,8 @@ parameters:
   codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
 
 jobs:
-  - job: Pester
+  - job: PesterGherkin
     dependsOn: ${{ parameters.dependsOn }}
-
     variables:
       resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
       CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
