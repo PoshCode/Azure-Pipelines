@@ -17,12 +17,12 @@ jobs:
       displayName: 'Download Build Artifacts'
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: '${{ parameters.stagingDirectory }}\${{ parameters.compiledArtifact }}'
+        downloadPath: '${{ parameters.stagingDirectory }}/${{ parameters.compiledArtifact }}'
         itemPattern: '**/*'
 
     - template: Sign-step.yml
       parameters:
-        Path: '${{ parameters.stagingDirectory }}\${{ parameters.compiledArtifact }}'
+        Path: '${{ parameters.stagingDirectory }}/${{ parameters.compiledArtifact }}'
         Filter: ${{ parameters.filter }}
         Certificate: ${{ parameters.certificate }}
 
@@ -30,4 +30,4 @@ jobs:
       displayName: 'RePublish Signed ${{ parameters.compiledArtifact }}'
       inputs:
         ArtifactName: ${{ parameters.signedArtifact }}
-        targetPath: '${{ parameters.stagingDirectory }}\${{ parameters.artifactName }}'
+        targetPath: '${{ parameters.stagingDirectory }}/${{ parameters.artifactName }}'

@@ -1,11 +1,11 @@
 parameters:
-  specDirectory: '$(Build.SourcesDirectory)\Specs'
+  specDirectory: '$(Build.SourcesDirectory)/Specs'
   includeTag: ''
   excludeTag: ''
   additionalModulePaths: ''
   codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
-  resultsFile: '$(Common.TestResultsDirectory)\Test-$(Build.SourceVersion).xml'
-  # CodeCoverageOutputFile: '$(Common.TestResultsDirectory)\Coverage-$(Build.SourceVersion).xml'
+  resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
+  # CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
 
 steps:
 - powershell: |

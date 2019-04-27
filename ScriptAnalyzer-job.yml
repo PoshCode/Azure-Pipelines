@@ -39,7 +39,7 @@ jobs:
 
     # Make a Pester test script for PSScriptAnalyzer
     - powershell: |
-        $TestFile = New-Item $Env:TEMP\$([guid]::NewGuid())\PSScriptAnalyzer.Tests.ps1 -Type File -Force
+        $TestFile = New-Item $Env:TEMP/$([guid]::NewGuid())/PSScriptAnalyzer.Tests.ps1 -Type File -Force
         "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"
         Set-Content $TestFile.Fullname '
         $ExcludeRules = @(${{ parameters.excludeRules }})
@@ -91,13 +91,13 @@ jobs:
       inputs:
         scriptFolder: $(TestPath)
         additionalModulePath: ${{ parameters.stagingDirectory }}
-        resultsFile: '$(Common.TestResultsDirectory)\ScriptAnalyzer-$(Build.SourceVersion).xml'
+        resultsFile: '$(Common.TestResultsDirectory)/ScriptAnalyzer-$(Build.SourceVersion).xml'
 
     - task: PublishTestResults@2
       displayName: 'Publish Script Analyzer Results'
       inputs:
         testResultsFormat: NUnit
-        testResultsFiles: '$(Common.TestResultsDirectory)\ScriptAnalyzer-$(Build.SourceVersion).xml'
+        testResultsFiles: '$(Common.TestResultsDirectory)/ScriptAnalyzer-$(Build.SourceVersion).xml'
         searchFolder: '$(Common.TestResultsDirectory)'
       condition: succeededOrFailed()
 

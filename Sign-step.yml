@@ -7,7 +7,7 @@ steps:
 - powershell: |
     $CodeSigning = @{
         TimestampServer = 'http://timestamp.veriSign.com/scripts/timstamp.dll'
-        Certificate = Get-Item -Path 'Cert:\LocalMachine\My\${{ parameters.certificate }}' -CodeSigningCert
+        Certificate = Get-Item -Path 'Cert:/LocalMachine/My/${{ parameters.certificate }}' -CodeSigningCert
     }
     if (!$CodeSigning.Certificate) {
         throw 'Set-AuthenticodeSignature cannot locate code signing certificate'
