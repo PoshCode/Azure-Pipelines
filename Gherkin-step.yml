@@ -17,16 +17,14 @@ steps:
     if ($CodeCoverage = "${{ parameters.codeCoverageDirectory }}") {
       $Options.CodeCoverage = $CodeCoverage
     }
-    if ($includeTag = @(${{ parameters.includeTag }}) {
+    if ($includeTag = @(${{ parameters.includeTag }})) {
       $Options.Tag = $includeTag
     }
-    if ($excludeTag = @(${{ parameters.excludeTag }}) {
+    if ($excludeTag = @(${{ parameters.excludeTag }})) {
       $Options.ExcludeTag = $excludeTag
     }
-
     if ("${{ parameters.additionalModulePaths }}") {
       $Env:PSModulePath = "${{ parameters.additionalModulePaths }}" + ';' + $Env:PSModulePath
     }
-
     $TestResults = Invoke-Gherkin @Options -PassThru
   displayName: Invoke-Gherkin
