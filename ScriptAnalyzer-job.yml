@@ -5,12 +5,16 @@ parameters:
   modulesToImport: ''
   customRulePath: ''
   excludeRules: '"PSShouldProcess","PSUseShouldProcessForStateChangingFunctions"'
+  poolVmImage: 'windows-2019'
 
 jobs:
   - job: ScriptAnalyzer
     dependsOn: ${{ parameters.dependsOn }}
     workspace:
       clean: outputs
+
+    pool:
+      vmImage: ${{ parameters.poolVmImage }}
 
     steps:
     - checkout: none # skip checking out code

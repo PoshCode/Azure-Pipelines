@@ -1,7 +1,13 @@
+parameters:
+  # It seems that currently, the gitversion task isn't working elsewhere
+  poolVmImage: 'windows-2019'
+
 jobs:
   - job: Initialize
+
     pool:
-      vmImage: windows-2019
+      vmImage: ${{ parameters.poolVmImage }}
+
     steps:
     - checkout: self
       clean: false
@@ -19,8 +25,10 @@ jobs:
       displayName: Export Variables
 
   - job: GitVersion
+
     pool:
-      vmImage: windows-2019
+      vmImage: ${{ parameters.poolVmImage }}
+
     dependsOn: Initialize
 
     variables:
