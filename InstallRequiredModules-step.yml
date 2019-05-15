@@ -4,6 +4,9 @@ parameters:
 
 steps:
 - powershell: |
-    Save-Script Install-RequiredModule -Path .
-    ./Install-RequiredModule.ps1 -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}' -Verbose
+    if (!(Test-Path '${{ parameters.Destination }}')) {
+        New-Item -Type Directory '${{ parameters.Destination }}'
+    }
+    Save-Script Install-RequiredModule -Path '${{ parameters.Destination }}'
+    &'${{ parameters.Destination }}/Install-RequiredModule.ps1' -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}' -Verbose
   displayName: 'Restore pre-requisites'
