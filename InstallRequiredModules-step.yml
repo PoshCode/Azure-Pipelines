@@ -1,12 +1,18 @@
 parameters:
-  Path: ./RequiredModules.psd1
-  Destination: ./RequiredModules
+  Path: $(Build.SourcesDirectory)/RequiredModules.psd1
+  Destination: ''
 
 steps:
 - powershell: |
-    if (!(Test-Path '${{ parameters.Destination }}')) {
-        New-Item -Type Directory '${{ parameters.Destination }}'
+    if ('${{ parameters.Destination }}') {
+        Write-Warning "The Destination '${{ parameters.Destination }};' isn't guaranteed to be in PSModulePath on subsequent tasks."
+        if (!(Test-Path '${{ parameters.Destination }}')) {
+            New-Item -Type Directory '${{ parameters.Destination }}'
+        }
+        Save-Script Install-RequiredModule -Path '${{ parameters.Destination }}'
+        &'${{ parameters.Destination }}/Install-RequiredModule.ps1' -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}' -Verbose
+    } else {
+        Install-Script Install-RequiredModule -Force
+        Install-RequiredModule -Path '${{ parameters.Path }}' -Confirm:$false
     }
-    Save-Script Install-RequiredModule -Path '${{ parameters.Destination }}'
-    &'${{ parameters.Destination }}/Install-RequiredModule.ps1' -Path '${{ parameters.Path }}' -Destination '${{ parameters.Destination }}' -Verbose
   displayName: 'Restore pre-requisites'
