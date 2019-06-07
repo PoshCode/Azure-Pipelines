@@ -26,6 +26,8 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
+    - template: InstallRequiredModules-step.yml
+
     - pwsh: |
         # Install the latest PSScriptAnalyzer (TODO: support specifying the version)
         $Policy = (Get-PSRepository PSGallery).InstallationPolicy
@@ -46,6 +48,7 @@ jobs:
         $TestFile = New-Item $Env:TEMP/$([guid]::NewGuid())/PSScriptAnalyzer.Tests.ps1 -Type File -Force
         "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"
         Set-Content $TestFile.Fullname '
+        Import-Module PSScriptAnalyzer
         $ExcludeRules = @(${{ parameters.excludeRules }})
         $CustomRulePath = "${{ parameters.customRulePath }}"
         $Path = "${{ parameters.stagingDirectory }}"

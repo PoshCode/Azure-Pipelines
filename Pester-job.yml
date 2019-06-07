@@ -25,6 +25,8 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
+    - template: InstallRequiredModules-step.yml
+
     - task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
       displayName: 'Pester Test Runner'
       inputs:
