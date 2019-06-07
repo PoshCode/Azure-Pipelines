@@ -1,12 +1,12 @@
 parameters:
   # It seems that currently, the gitversion task isn't working elsewhere
-  poolVmImage: 'windows-2019'
+  pool:
+    vmImage: 'windows-2019'
 
 jobs:
   - job: Initialize
 
-    pool:
-      vmImage: ${{ parameters.poolVmImage }}
+    pool: ${{ parameters.pool }}
 
     steps:
     - checkout: self
@@ -18,7 +18,7 @@ jobs:
       parameters:
         additionalArguments: /nocache
 
-    - powershell: |
+    - pwsh: |
         echo '##vso[task.setvariable variable=Counter;isOutput=true]$(GitVersion.MajorMinorPatch)'
         echo ("##vso[task.setvariable variable=SafeBranchName;isOutput=true]{0}" -f ('$(GitVersion.BranchName)' -replace '[\\/]','-'))
       name: Output
@@ -26,8 +26,7 @@ jobs:
 
   - job: GitVersion
 
-    pool:
-      vmImage: ${{ parameters.poolVmImage }}
+    pool: ${{ parameters.pool }}
 
     dependsOn: Initialize
 
@@ -45,7 +44,7 @@ jobs:
       parameters:
         additionalArguments: /nocache
 
-    - powershell: |
+    - pwsh: |
         foreach ($envar in Get-Item ENV:GITVERSION_*) {
           Write-Host "INFO [task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
           Write-Output "##vso[task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"

@@ -4,10 +4,14 @@ parameters:
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
   testsDirectory: '$(Build.SourcesDirectory)/Tests'
   excludeTag: 'Integration, Audit'
+  pool:
+    vmImage: 'windows-2019'
 
 jobs:
   - job: Pester
     dependsOn: ${{ parameters.dependsOn }}
+
+    pool: ${{ parameters.pool }}
 
     steps:
     - checkout: self # re-checkout, because we don't package tests

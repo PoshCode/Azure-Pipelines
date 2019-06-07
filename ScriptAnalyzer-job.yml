@@ -5,7 +5,8 @@ parameters:
   modulesToImport: ''
   customRulePath: ''
   excludeRules: '"PSShouldProcess","PSUseShouldProcessForStateChangingFunctions"'
-  poolVmImage: 'windows-2019'
+  pool:
+    vmImage: 'windows-2019'
 
 jobs:
   - job: ScriptAnalyzer
@@ -13,8 +14,7 @@ jobs:
     workspace:
       clean: outputs
 
-    pool:
-      vmImage: ${{ parameters.poolVmImage }}
+    pool: ${{ parameters.pool }}
 
     steps:
     - checkout: none # skip checking out code
@@ -26,7 +26,7 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
-    - powershell: |
+    - pwsh: |
         # Install the latest PSScriptAnalyzer (TODO: support specifying the version)
         $Policy = (Get-PSRepository PSGallery).InstallationPolicy
         Set-PSRepository PSGallery -InstallationPolicy Trusted
@@ -42,7 +42,7 @@ jobs:
       displayName: "Ensure pre-requisites"
 
     # Make a Pester test script for PSScriptAnalyzer
-    - powershell: |
+    - pwsh: |
         $TestFile = New-Item $Env:TEMP/$([guid]::NewGuid())/PSScriptAnalyzer.Tests.ps1 -Type File -Force
         "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"
         Set-Content $TestFile.Fullname '

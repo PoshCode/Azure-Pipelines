@@ -5,10 +5,13 @@ parameters:
   certificate: '4CBBCD74FE2AEBD080758A967D20ABF916872A95'
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
   filter: '*.*'
+  pool:
+    vmImage: 'windows-2019'
 
 jobs:
   - job: Sign
     dependsOn: ${{ parameters.dependsOn }}
+    pool: ${{ parameters.pool }}
 
     steps:
     - checkout: none # skip checking out code, we're just signing an artifact

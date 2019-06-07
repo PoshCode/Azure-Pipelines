@@ -7,7 +7,8 @@ parameters:
   additionalModulePaths: ''
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
   codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
-  poolVmImage: 'windows-2019'
+  pool:
+    vmImage: 'windows-2019'
 
 jobs:
   - job: PesterGherkin
@@ -16,8 +17,7 @@ jobs:
       resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
       CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
 
-    pool:
-      vmImage: ${{ parameters.poolVmImage }}
+    pool: ${{ parameters.pool }}
 
     steps:
     - checkout: self # re-checkout, because we don't package tests

@@ -8,7 +8,7 @@ parameters:
   # CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
 
 steps:
-- powershell: |
+- pwsh: |
     $Options = @{
         Path = "${{ parameters.specDirectory }}"
         EnableExit = $true
