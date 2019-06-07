@@ -20,9 +20,8 @@ jobs:
     pool: ${{ parameters.pool }}
 
     steps:
-    - checkout: self # re-checkout, because we don't package tests
-      fetchDepth: 1  # we only need the current tests
-      clean: false
+    - checkout: self
+      lfs: true
 
     - template: InstallRequiredModules-step.yml
       parameters:

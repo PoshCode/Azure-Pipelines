@@ -17,7 +17,11 @@ jobs:
     pool: ${{ parameters.pool }}
 
     steps:
-    - checkout: none # skip checking out code
+    # we shouldn't need to checkout, but we need the RequiredModules - what can we do?
+    - checkout: self
+      lfs: true
+
+    - template: InstallRequiredModules-step.yml
 
     - task: DownloadPipelineArtifact@1
       displayName: 'Download Build Artifacts'
@@ -25,8 +29,6 @@ jobs:
         artifactName: ${{ parameters.artifactName }}
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
-
-    - template: InstallRequiredModules-step.yml
 
     - pwsh: |
         # Install the latest PSScriptAnalyzer (TODO: support specifying the version)
@@ -92,11 +94,11 @@ jobs:
             }
           }
         }'
+      displayName: 'Generate ScriptAnalyzer Test'
 
-    - task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
-      displayName: 'Pester Script Analyzer'
-      inputs:
-        scriptFolder: $(TestPath)
+    - template: Pester-step.yml
+      parameters:
+        testsDirectory: $(TestPath)
         additionalModulePath: ${{ parameters.stagingDirectory }}
         resultsFile: '$(Common.TestResultsDirectory)/ScriptAnalyzer-$(Build.SourceVersion).xml'
 

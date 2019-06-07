@@ -10,9 +10,7 @@ jobs:
 
     steps:
     - checkout: self
-      clean: false
-      lfs: false
-      submodules: false # can be true, or recursive
+      lfs: true
 
     - template: GitVersion-step.yml
       parameters:

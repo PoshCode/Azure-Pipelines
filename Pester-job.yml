@@ -3,7 +3,8 @@ parameters:
   artifactName: 'Module'
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
   testsDirectory: '$(Build.SourcesDirectory)/Tests'
-  excludeTag: 'Integration, Audit'
+  includeTag: ''
+  excludeTag: ''
   pool:
     vmImage: 'windows-2019'
 
@@ -14,9 +15,8 @@ jobs:
     pool: ${{ parameters.pool }}
 
     steps:
-    - checkout: self # re-checkout, because we don't package tests
-      fetchDepth: 1  # we only need the current tests
-      clean: false
+    - checkout: self
+      lfs: true
 
     - task: DownloadPipelineArtifact@1
       displayName: 'Download Build Artifacts'
@@ -27,15 +27,14 @@ jobs:
 
     - template: InstallRequiredModules-step.yml
 
-    - task: richardfennellBM.BM-VSTS-PesterRunner-Task.Pester-Task.Pester@8
-      displayName: 'Pester Test Runner'
-      inputs:
-        scriptFolder: ${{ parameters.testsDirectory }}
+    - template: Pester-step.yml
+      parameters:
+        testsDirectory: '$(Build.SourcesDirectory)/Tests'
+        includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
         additionalModulePath: ${{ parameters.stagingDirectory }}
-        CodeCoverageFolder: ${{ parameters.stagingDirectory }}
-        resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-        CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
+        codeCoverageDirectory: ${{ parameters.stagingDirectory }}
+        show: 'Default'
 
     - task: PublishTestResults@2
       displayName: 'Publish Test Results'

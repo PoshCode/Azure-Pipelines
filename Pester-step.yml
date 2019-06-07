@@ -1,0 +1,34 @@
+# We need a pester step because the pester task won't let me specify `pwsh`
+parameters:
+  testsDirectory: '$(Build.SourcesDirectory)/Tests'
+  includeTag: ''
+  excludeTag: ''
+  additionalModulePaths: ''
+  show: 'Default'
+  resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
+  codeCoverageDirectory: ''
+  codeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
+
+steps:
+- pwsh: |
+    $Options = @{
+        Path = "${{ parameters.testsDirectory }}"
+        OutputFormat = "NUnitXml"
+        OutputFile = "${{ parameters.resultsFile }}"
+        Show = "${{ parameters.show }}"
+    }
+    if ($CodeCoverage = "${{ parameters.codeCoverageDirectory }}") {
+      $Options.CodeCoverage = $CodeCoverage
+      $Options.CodeCoverageOutputFile = "${{ parameters.codeCoverageOutputFile }}"
+    }
+    if ($includeTag = @(${{ parameters.includeTag }})) {
+      $Options.Tag = $includeTag
+    }
+    if ($excludeTag = @(${{ parameters.excludeTag }})) {
+      $Options.ExcludeTag = $excludeTag
+    }
+    if ("${{ parameters.additionalModulePaths }}") {
+      $Env:PSModulePath = "${{ parameters.additionalModulePaths }}" + ';' + $Env:PSModulePath
+    }
+    Invoke-Pester @Options
+  displayName: 'Invoke-Pester'
