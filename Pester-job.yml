@@ -1,10 +1,14 @@
 parameters:
   dependsOn: 'Build'
+  pesterVersion: ''
+  testsDirectory: '$(Build.SourcesDirectory)/Tests'
+  includeTag: []
+  excludeTag: []
+  additionalModulePath: ''
   artifactName: 'Module'
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
-  testsDirectory: '$(Build.SourcesDirectory)/Tests'
-  includeTag: ''
-  excludeTag: ''
+  codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
+  show: 'All'
   pool:
     vmImage: 'windows-2019'
 
@@ -18,6 +22,10 @@ jobs:
     - checkout: self
       lfs: true
 
+    - template: InstallRequiredModules-step.yml
+      parameters:
+        Destination: $(Build.SourcesDirectory)/RequiredModules
+
     - task: DownloadPipelineArtifact@1
       displayName: 'Download Build Artifacts'
       inputs:
@@ -25,27 +33,12 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
-    - template: InstallRequiredModules-step.yml
-
     - template: Pester-step.yml
       parameters:
-        testsDirectory: '$(Build.SourcesDirectory)/Tests'
+        pesterVersion: ${{ parameters.pesterVersion }}
+        testsDirectory: ${{ parameters.testsDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.stagingDirectory }}
-        codeCoverageDirectory: ${{ parameters.stagingDirectory }}
-        show: 'Default'
-
-    - task: PublishTestResults@2
-      displayName: 'Publish Test Results'
-      inputs:
-        testResultsFormat: NUnit
-        testResultsFiles: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-        searchFolder: '$(Common.TestResultsDirectory)'
-      condition: succeededOrFailed()
-
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish code coverage'
-      inputs:
-        summaryFileLocation: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
-      condition: succeededOrFailed()
+        additionalModulePath: ${{ parameters.additionalModulePath }}
+        codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        show: ${{ parameters.show }}

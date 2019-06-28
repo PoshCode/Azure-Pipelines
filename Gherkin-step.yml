@@ -1,31 +1,84 @@
 parameters:
+  pesterVersion: ''
   specDirectory: '$(Build.SourcesDirectory)/Specs'
-  includeTag: ''
-  excludeTag: ''
-  additionalModulePaths: ''
-  codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
-  resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-  # CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
+  includeTag: []
+  excludeTag: []
+  additionalModulePath: ''
+  codeCoverageDirectory: ''
+  testRunTitle: ''
+  show: 'All'
 
 steps:
-- pwsh: |
+- powershell: |
+    # Preinstall and import the specified version of the module
+    Set-PSRepository PSGallery -InstallationPolicy Trusted
+    $Version = if ("${{ parameters.pesterVersion }}") {
+        "${{ parameters.pesterVersion }}"
+    } else {
+        (Find-Module Pester).Version
+    }
+    Write-Host "##vso[task.setvariable variable=PesterVersion]$Version"
+    Write-Host "Installing and importing Pester version $Version"
+    Install-Module Pester -RequiredVersion $Version -Scope CurrentUser -Repository 'PSGallery' -AllowClobber -SkipPublisherCheck
+  displayName: 'Install Required Pester Version'
+
+- powershell: |
+    Import-Module Pester -RequiredVersion $(PesterVersion)
+
     $Options = @{
-        Path = "${{ parameters.specDirectory }}"
-        EnableExit = $true
+        Path = "Convert-Path ${{ parameters.specDirectory }}"
         OutputFormat = "NUnitXml"
-        OutputFile = "${{ parameters.resultsFile }}"
+        OutputFile = Join-Path '$(Common.TestResultsDirectory)' 'Test-$(Build.SourceVersion).xml'
+        Show = "${{ parameters.show }}"
     }
+
     if ($CodeCoverage = "${{ parameters.codeCoverageDirectory }}") {
-      $Options.CodeCoverage = $CodeCoverage
+        $Options.CodeCoverage = Get-ChildItem $CodeCoverage -Recurse -Include *.psm1, *.ps1 | Convert-Path
+        $Options.CodeCoverageOutputFile = '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
     }
-    if ($includeTag = @(${{ parameters.includeTag }})) {
-      $Options.Tag = $includeTag
+
+    if ($includeTag = @("${{ join('", "', parameters.includeTag) }}")) {
+        Write-Verbose "IncludeTag $($includeTag -join ', ')" -Verbose
+        $Options.Tag = $includeTag
     }
-    if ($excludeTag = @(${{ parameters.excludeTag }})) {
-      $Options.ExcludeTag = $excludeTag
+
+    if ($excludeTag = @("${{ join('", "', parameters.excludeTag) }}")) {
+        Write-Verbose "ExcludeTag $($excludeTag -join ', ')" -Verbose
+        $Options.ExcludeTag = $excludeTag
     }
-    if ("${{ parameters.additionalModulePaths }}") {
-      $Env:PSModulePath = "${{ parameters.additionalModulePaths }}" + ';' + $Env:PSModulePath
+
+    if ("${{ parameters.additionalModulePath }}") {
+        Write-Verbose "Existing module paths $Env:PSModulePath" -Verbose
+        Write-Verbose "Adding module paths ${{ parameters.additionalModulePath }}" -Verbose
+        $Env:PSModulePath = "${{ parameters.additionalModulePath }}" + ';' + $Env:PSModulePath
     }
-    $TestResults = Invoke-Gherkin @Options -PassThru
+
+    Write-Host $($Options | Out-String)
+    Write-Host "##vso[task.setvariable variable=PSPlatform]PowerShell $($PSVersionTable['PSVersion','OS'] -join ' on ')"
+    Invoke-Gherkin @Options
   displayName: Invoke-Gherkin
+
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testResultsFormat: NUnit
+    testResultsFiles: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
+    buildPlatform: $(PSPlatform)
+    buildConfiguration: ${{ parameters.configurationName }}
+    failTaskOnFailedTests: true
+    ${{ if ne('',parameters.testRunTitle) }}:
+      testRunTitle: ${{ parameters.testRunTitle }}
+  condition: succeededOrFailed()
+
+- task: PublishCodeCoverageResults@1
+  displayName: Publish Code Coverage
+  inputs:
+    summaryFileLocation: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
+    pathToSources: ${{ parameters.codeCoverageDirectory }}
+    failIfCoverageEmpty: true
+  condition: |
+    and(
+        succeededOrFailed(),
+        ne('', '${{ parameters.codeCoverageDirectory }}')
+    )

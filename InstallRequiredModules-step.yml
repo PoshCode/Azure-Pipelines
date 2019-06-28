@@ -3,7 +3,7 @@ parameters:
   Destination: ''
 
 steps:
-- pwsh: |
+- powershell: |
     if ('${{ parameters.Destination }}') {
         Write-Warning "The Destination '${{ parameters.Destination }};' isn't guaranteed to be in PSModulePath on subsequent tasks."
         if (!(Test-Path '${{ parameters.Destination }}')) {

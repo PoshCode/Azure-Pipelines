@@ -48,7 +48,7 @@ jobs:
     variables:
       SemVer: $[dependencies.GitVersion.outputs['GitVersion.SemVer']]
     steps:
-    - pwsh: Build-Module -SemVer $(SemVer) -Verbose
+    - powershell: Build-Module -SemVer $(SemVer) -Verbose
       displayName: 'Build-Module'
 ```
 

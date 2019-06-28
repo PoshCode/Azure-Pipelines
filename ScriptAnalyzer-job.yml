@@ -30,7 +30,7 @@ jobs:
         downloadPath: ${{ parameters.stagingDirectory }}
         itemPattern: '**/*'
 
-    - pwsh: |
+    - powershell: |
         # Install the latest PSScriptAnalyzer (TODO: support specifying the version)
         $Policy = (Get-PSRepository PSGallery).InstallationPolicy
         Set-PSRepository PSGallery -InstallationPolicy Trusted
@@ -46,7 +46,7 @@ jobs:
       displayName: "Ensure pre-requisites"
 
     # Make a Pester test script for PSScriptAnalyzer
-    - pwsh: |
+    - powershell: |
         $TestFile = New-Item $Env:TEMP/$([guid]::NewGuid())/PSScriptAnalyzer.Tests.ps1 -Type File -Force
         "##vso[task.setvariable variable=TestPath]$($TestFile.Fullname)"
         Set-Content $TestFile.Fullname '

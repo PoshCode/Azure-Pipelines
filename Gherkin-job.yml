@@ -1,21 +1,20 @@
 parameters:
   dependsOn: 'Build'
-  artifactName: 'Module'
+  pesterVersion: ''
   specDirectory: '$(Build.SourcesDirectory)/Specs'
-  includeTag: ''
-  excludeTag: ''
+  includeTag: []
+  excludeTag: []
   additionalModulePaths: ''
+  artifactName: 'Module'
   stagingDirectory: '$(Build.ArtifactStagingDirectory)'
   codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
+  show: 'All'
   pool:
     vmImage: 'windows-2019'
 
 jobs:
   - job: PesterGherkin
     dependsOn: ${{ parameters.dependsOn }}
-    variables:
-      resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-      CodeCoverageOutputFile: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
 
     pool: ${{ parameters.pool }}
 
@@ -36,25 +35,10 @@ jobs:
 
     - template: Gherkin-step.yml
       parameters:
+        pesterVersion: ${{ parameters.pesterVersion }}
         specDirectory: ${{ parameters.specDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePaths: "${{ parameters.stagingDirectory }};${{ parameters.additionalModulePaths }};$(Build.SourcesDirectory)/RequiredModules"
+        additionalModulePath: "${{ parameters.stagingDirectory }};${{ parameters.additionalModulePaths }};$(Build.SourcesDirectory)/RequiredModules"
         codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
-        Filter: ${{ parameters.filter }}
-        Certificate: ${{ parameters.certificate }}
-        resultsFile: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-
-    - task: PublishTestResults@2
-      displayName: 'Publish Test Results'
-      inputs:
-        testResultsFormat: NUnit
-        testResultsFiles: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-        searchFolder: '$(Common.TestResultsDirectory)'
-      condition: succeededOrFailed()
-
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish code coverage'
-      inputs:
-        summaryFileLocation: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
-      condition: succeededOrFailed()
+        show: ${{ parameters.show }}

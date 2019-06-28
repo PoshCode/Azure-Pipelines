@@ -4,7 +4,7 @@ parameters:
   certificate: ''
 
 steps:
-- pwsh: |
+- powershell: |
     $CodeSigning = @{
         TimestampServer = 'http://timestamp.veriSign.com/scripts/timstamp.dll'
         Certificate = Get-Item -Path 'Cert:/LocalMachine/My/${{ parameters.certificate }}' -CodeSigningCert
