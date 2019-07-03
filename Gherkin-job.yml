@@ -26,12 +26,12 @@ jobs:
       parameters:
         Destination: $(Build.SourcesDirectory)/RequiredModules
 
-    - task: DownloadPipelineArtifact@1
+    - task: DownloadPipelineArtifact@2
       displayName: 'Download Build Artifacts'
+      condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.stagingDirectory }}
-        itemPattern: '**/*'
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
     - template: Gherkin-step.yml
       parameters:

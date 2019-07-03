@@ -16,12 +16,11 @@ jobs:
     steps:
     - checkout: none # skip checking out code, we're just signing an artifact
 
-    - task: DownloadPipelineArtifact@1
+    - task: DownloadPipelineArtifact@2
       displayName: 'Download Build Artifacts'
       inputs:
         artifactName: ${{ parameters.artifactName }}
         downloadPath: '${{ parameters.stagingDirectory }}/${{ parameters.compiledArtifact }}'
-        itemPattern: '**/*'
 
     - template: Sign-step.yml
       parameters:
@@ -29,8 +28,8 @@ jobs:
         Filter: ${{ parameters.filter }}
         Certificate: ${{ parameters.certificate }}
 
-    - task: PublishPipelineArtifact@0
+    - task: PublishPipelineArtifact@1
       displayName: 'RePublish Signed ${{ parameters.compiledArtifact }}'
       inputs:
-        ArtifactName: ${{ parameters.signedArtifact }}
-        targetPath: '${{ parameters.stagingDirectory }}/${{ parameters.artifactName }}'
+        artifactName: ${{ parameters.signedArtifact }}
+        pathToPublish: '${{ parameters.stagingDirectory }}/${{ parameters.artifactName }}'

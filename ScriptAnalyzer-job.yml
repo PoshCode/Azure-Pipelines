@@ -23,12 +23,13 @@ jobs:
 
     - template: InstallRequiredModules-step.yml
 
-    - task: DownloadPipelineArtifact@1
+    # If we depends on a build step, then we should download the artifact
+    - task: DownloadPipelineArtifact@2
       displayName: 'Download Build Artifacts'
+      condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.stagingDirectory }}
-        itemPattern: '**/*'
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
     - powershell: |
         # Install the latest PSScriptAnalyzer (TODO: support specifying the version)

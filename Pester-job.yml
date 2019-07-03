@@ -26,12 +26,13 @@ jobs:
       parameters:
         Destination: $(Build.SourcesDirectory)/RequiredModules
 
-    - task: DownloadPipelineArtifact@1
+    # If Pester depends on a build step, then we should download that artifact
+    - task: DownloadPipelineArtifact@2
       displayName: 'Download Build Artifacts'
+      condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.stagingDirectory }}
-        itemPattern: '**/*'
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
     - template: Pester-step.yml
       parameters:
