@@ -26,7 +26,7 @@ steps:
     Import-Module Pester -RequiredVersion $(PesterVersion)
 
     $Options = @{
-        Path = "Convert-Path ${{ parameters.specDirectory }}"
+        Path = Convert-Path "${{ parameters.specDirectory }}"
         OutputFormat = "NUnitXml"
         OutputFile = Join-Path '$(Common.TestResultsDirectory)' 'Test-$(Build.SourceVersion).xml'
         Show = "${{ parameters.show }}"

@@ -29,7 +29,6 @@ jobs:
       displayName: 'Fetch Submodule LFS files'
       name: FetchSubmoduleLFS
 
-
     - ${{ if ne('', parameters.requiredModulesPath ) }}:
       - template: Install-RequiredModule-step.yml
         parameters:

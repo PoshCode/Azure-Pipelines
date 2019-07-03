@@ -1,13 +1,15 @@
 parameters:
-  dependsOn: 'Build'
   pesterVersion: ''
   testsDirectory: '$(Build.SourcesDirectory)/Tests'
-  includeTag: []
-  excludeTag: []
+  requiredModulesPath: RequiredModules.psd1
+  artifactName: ''
+  artifactDownloadDirectory: '$(Build.ArtifactStagingDirectory)'
   additionalModulePath: ''
-  artifactName: 'Module'
-  stagingDirectory: '$(Build.ArtifactStagingDirectory)'
-  codeCoverageDirectory: '$(Build.ArtifactStagingDirectory)'
+  codeCoverageDirectory: ''
+  dependsOn: []
+  excludeTag: []
+  includeTag: []
+  cleanJob: ''
   show: 'All'
   pool:
     vmImage: 'windows-2019'
@@ -15,16 +17,20 @@ parameters:
 jobs:
   - job: Pester
     dependsOn: ${{ parameters.dependsOn }}
+    ${{ if ne(parameters.cleanJob, '') }}:
+      workspace:
+        clean: ${{ parameters.cleanJob }}
 
     pool: ${{ parameters.pool }}
 
     steps:
-    - checkout: self
+    - checkout: self # re-checkout, because we don't package tests
+      fetchDepth: 1  # we only need the current tests
       lfs: true
 
-    - template: InstallRequiredModules-step.yml
+    - template: Install-RequiredModule-step.yml
       parameters:
-        Destination: $(Build.SourcesDirectory)/RequiredModules
+        path: $(Build.SourcesDirectory)/${{ parameters.requiredModulesPath }}
 
     # If Pester depends on a build step, then we should download that artifact
     - task: DownloadPipelineArtifact@2
@@ -40,6 +46,7 @@ jobs:
         testsDirectory: ${{ parameters.testsDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.additionalModulePath }}
+        additionalModulePath: ${{ parameters.artifactDownloadDirectory }};${{ parameters.additionalModulePath }}
         codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        configurationName: 'Pester Unit Tests'
         show: ${{ parameters.show }}
