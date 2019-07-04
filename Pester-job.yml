@@ -38,7 +38,7 @@ jobs:
       condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.artifactDownloadDirectory }}
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}/$(Build.DefinitionName)
 
     - template: Pester-step.yml
       parameters:
