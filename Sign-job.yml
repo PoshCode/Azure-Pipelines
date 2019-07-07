@@ -32,4 +32,4 @@ jobs:
       displayName: 'RePublish Signed ${{ parameters.compiledArtifact }}'
       inputs:
         artifactName: ${{ parameters.signedArtifact }}
-        pathToPublish: '${{ parameters.stagingDirectory }}/${{ parameters.artifactName }}'
+        targetPath: '${{ parameters.stagingDirectory }}/${{ parameters.artifactName }}'

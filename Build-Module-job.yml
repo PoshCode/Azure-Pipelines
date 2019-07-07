@@ -44,4 +44,4 @@ jobs:
       displayName: Publish Build Output
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        pathToPublish: $(Build.BinariesDirectory)
+        targetPath: $(Build.BinariesDirectory)
