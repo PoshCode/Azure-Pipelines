@@ -5,7 +5,6 @@ parameters:
 
 jobs:
   - job: Initialize
-
     pool: ${{ parameters.pool }}
 
     steps:
@@ -13,39 +12,44 @@ jobs:
       lfs: true
 
     - template: GitVersion-step.yml
-      parameters:
-        additionalArguments: /nocache
 
     - powershell: |
-        echo '##vso[task.setvariable variable=Counter;isOutput=true]$(GitVersion.MajorMinorPatch)'
-        echo ("##vso[task.setvariable variable=SafeBranchName;isOutput=true]{0}" -f ('$(GitVersion.BranchName)' -replace '[\\/]','-'))
+        @{
+            Counter          = '$(GitVersion.MajorMinorPatch)'
+            SafeBranchName   = '$(GitVersion.BranchName)' -replace '[\\/]','-'
+            SubModuleCount   = @(git submodule foreach :).Count
+            HasSolutionFile  = Test-Path *.sln
+            HasProjectFile   = Test-Path *.*proj
+            HasDotNetProject = (Test-Path *.csproj, *.fsproj, *.sln) -contains $true
+        }.GetEnumerator().ForEach({
+            Write-Host "EXPORT {0} = {1}`n##vso[task.setvariable variable={0};isOutput=true]{1}" -f $_.Key, $_.Value
+        })
       name: Output
       displayName: Export Variables
 
   - job: GitVersion
-
+    dependsOn: Initialize
     pool: ${{ parameters.pool }}
 
-    dependsOn: Initialize
-
     variables:
-      BuildCount: $[counter(dependencies.version.outputs['Output.Counter'], 0)]
-      SafeBranchName: $[dependencies.version.outputs['Output.SafeBranchName']]
+      BUILDCOUNT: $[counter(dependencies.Initialize.outputs['Output.Counter'], 0)]
+      SAFEBRANCHNAME: $[dependencies.Initialize.outputs['Output.SafeBranchName']]
 
     steps:
     - checkout: self
-      clean: false
       lfs: true
-      submodules: false # can be true, or recursive
 
     - template: GitVersion-step.yml
-      parameters:
-        additionalArguments: /nocache
 
     - powershell: |
         foreach ($envar in Get-Item ENV:GITVERSION_*) {
           Write-Host "INFO [task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
-          Write-Output "##vso[task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
+          Write-Host "##vso[task.setvariable variable=$(($envar.Name -split "_",2)[1]);isOutput=true]$($envar.Value)"
         }
+        # Also pass through the variables from initialize
+        Write-Host "INFO [task.setvariable variable=BUILDCOUNT;isOutput=true]$Env:BUILDCOUNT"
+        Write-Host "##vso[task.setvariable variable=BUILDCOUNT;isOutput=true]$Env:BUILDCOUNT"
+        Write-Host "INFO [task.setvariable variable=SAFEBRANCHNAME;isOutput=true]$Env:SAFEBRANCHNAME"
+        Write-Host "##vso[task.setvariable variable=SAFEBRANCHNAME;isOutput=true]$Env:SAFEBRANCHNAME"
       name: GitVersion
       displayName: Export GitVersion Variables

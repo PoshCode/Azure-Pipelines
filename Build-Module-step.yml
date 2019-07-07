@@ -1,5 +1,5 @@
 parameters:
-  sourcePath: "$(Build.SourcesDirectory)/**/build.psd1"
+  sourcePath: "$(Build.SourcesDirectory)/*/build.psd1"
   destination: "$(Build.BinariesDirectory)"
   semVer: $[dependencies.GitVersion.outputs['GitVersion.NuGetVersion']]
 

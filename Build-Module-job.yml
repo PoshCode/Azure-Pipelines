@@ -14,6 +14,8 @@ jobs:
       clean: all
     variables:
       SemVer: $[dependencies.GitVersion.outputs['GitVersion.${{ parameters.gitVersionVariable }}']]
+      DotNetBuild: $[dependencies.Initialize.outputs['Output.HasDotNetProject']]
+      SubModuleCount: $[dependencies.Initialize.outputs['Output.SubModuleCount']]
 
     steps:
     - checkout: self
@@ -27,12 +29,19 @@ jobs:
         git config http.https://qmdevteam.visualstudio.com.extraheader="AUTHORIZATION: bearer $(System.AccessToken)"
         git submodule foreach --recursive "ls && git lfs install --local && git lfs pull"
       displayName: 'Fetch Submodule LFS files'
+      condition: gt(variables['SubModuleCount'], 0)
       name: FetchSubmoduleLFS
 
     - ${{ if ne('', parameters.requiredModulesPath ) }}:
       - template: Install-RequiredModule-step.yml
         parameters:
           path: $(Build.SourcesDirectory)/${{ parameters.requiredModulesPath }}
+
+    - powershell: |
+        $VersionPrefix, $VersionSuffix = "$(SemVer)" -split '[-+]', 2
+        dotnet build -c Release -p:VersionPrefix=$VersionPrefix -p:VersionSuffix=$VersionSuffix
+      displayName: Build Solution
+      condition: eq(variables['DotNetBuild'],'True')
 
     - template: Build-Module-step.yml
       parameters:
