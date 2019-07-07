@@ -11,6 +11,8 @@ parameters:
   includeTag: []
   cleanJob: ''
   show: 'All'
+  strategy:
+    parallel: 1
   pool:
     vmImage: 'windows-2019'
 
@@ -21,6 +23,7 @@ jobs:
       workspace:
         clean: ${{ parameters.cleanJob }}
 
+    strategy: ${{ parameters.strategy }}
     pool: ${{ parameters.pool }}
 
     steps:

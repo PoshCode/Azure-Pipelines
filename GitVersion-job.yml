@@ -22,7 +22,7 @@ jobs:
             HasProjectFile   = Test-Path *.*proj
             HasDotNetProject = (Test-Path *.csproj, *.fsproj, *.sln) -contains $true
         }.GetEnumerator().ForEach({
-            Write-Host "EXPORT {0} = {1}`n##vso[task.setvariable variable={0};isOutput=true]{1}" -f $_.Key, $_.Value
+            Write-Host ("EXPORT {0} = {1}`n##vso[task.setvariable variable={0};isOutput=true]{1}" -f $_.Key, $_.Value)
         })
       name: Output
       displayName: Export Variables
