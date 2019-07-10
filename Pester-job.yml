@@ -4,7 +4,7 @@ parameters:
   requiredModulesPath: RequiredModules.psd1
   artifactName: ''
   artifactDownloadDirectory: '$(Build.ArtifactStagingDirectory)'
-  additionalModulePath: ''
+  additionalModulePaths: []
   codeCoverageDirectory: ''
   dependsOn: []
   excludeTag: []
@@ -43,13 +43,19 @@ jobs:
         artifactName: ${{ parameters.artifactName }}
         downloadPath: ${{ parameters.artifactDownloadDirectory }}/$(Build.DefinitionName)
 
+    - powershell: |
+        $AdditionalModulePaths = @("${{ parameters.artifactDownloadDirectory }}") +
+            @("${{ join('", "', parameters.additionalModulePaths) }}") -join [IO.Path]::PathSeparator
+        Write-Host "##vso[task.setvariable variable=AdditionalModulePaths]$AdditionalModulePaths"
+      displayName: 'Combine paths'
+
     - template: Pester-step.yml
       parameters:
         pesterVersion: ${{ parameters.pesterVersion }}
         testsDirectory: ${{ parameters.testsDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.artifactDownloadDirectory }};${{ parameters.additionalModulePath }}
+        additionalModulePaths: $(AdditionalModulePaths)
         codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
         configurationName: 'Pester Unit Tests'
         show: ${{ parameters.show }}

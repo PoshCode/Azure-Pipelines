@@ -3,7 +3,7 @@ parameters:
   specDirectory: '$(Build.SourcesDirectory)/Specs'
   includeTag: []
   excludeTag: []
-  additionalModulePath: ''
+  additionalModulePaths: []
   codeCoverageDirectory: ''
   testRunTitle: ''
   show: 'All'
@@ -37,24 +37,23 @@ steps:
         $Options.CodeCoverageOutputFile = '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
     }
 
-    if ($includeTag = @("${{ join('", "', parameters.includeTag) }}")) {
-        Write-Verbose "IncludeTag $($includeTag -join ', ')" -Verbose
-        $Options.Tag = $includeTag
+    if ($IncludeTag = @("${{ join('", "', parameters.includeTag) }}")) {
+        Write-Verbose "IncludeTag $($IncludeTag -join ', ')" -Verbose
+        $Options.Tag = $IncludeTag
     }
 
-    if ($excludeTag = @("${{ join('", "', parameters.excludeTag) }}")) {
-        Write-Verbose "ExcludeTag $($excludeTag -join ', ')" -Verbose
-        $Options.ExcludeTag = $excludeTag
+    if ($ExcludeTag = @("${{ join('", "', parameters.excludeTag) }}")) {
+        Write-Verbose "ExcludeTag $($ExcludeTag -join ', ')" -Verbose
+        $Options.ExcludeTag = $ExcludeTag
     }
 
-    if ("${{ parameters.additionalModulePath }}") {
-        Write-Verbose "Adding module paths ${{ parameters.additionalModulePath }}" -Verbose
+    if ($AdditionalModulePaths = @("${{ join('", "', parameters.additionalModulePaths) }}")) {
+        Write-Verbose "Adding module paths $AdditionalModulePaths" -Verbose
         $Env:PSModulePath = @(
-            @("${{ parameters.additionalModulePath }}" -split [IO.Path]::PathSeparator | % TrimEnd(':;')) +
+            @($AdditionalModulePaths -split [IO.Path]::PathSeparator | % TrimEnd(':;')) +
             @($Env:PSModulePath -split [IO.Path]::PathSeparator | % TrimEnd(':;'))
         ) -join [IO.Path]::PathSeparator
-        [Environment]::SetEnvironmentVariable("PSModulePath", $Env:PSModulePath, "User")
-        Write-Verbose "New PSModulePath $Env:PSModulePath" -Verbose
+        Write-Verbose "Current PSModulePath $Env:PSModulePath" -Verbose
     }
 
     Write-Host $($Options | Out-String)
