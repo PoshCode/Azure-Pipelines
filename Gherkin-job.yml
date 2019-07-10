@@ -37,7 +37,7 @@ jobs:
       condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.artifactDownloadDirectory }}/$(Build.DefinitionName)
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
     - template: Gherkin-step.yml
       parameters:
