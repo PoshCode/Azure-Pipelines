@@ -48,9 +48,13 @@ steps:
     }
 
     if ("${{ parameters.additionalModulePath }}") {
-        Write-Verbose "Existing module paths $Env:PSModulePath" -Verbose
         Write-Verbose "Adding module paths ${{ parameters.additionalModulePath }}" -Verbose
-        $Env:PSModulePath = "${{ parameters.additionalModulePath }}" + ';' + $Env:PSModulePath
+        $Env:PSModulePath = @(
+            @("${{ parameters.additionalModulePath }}" -split [IO.Path]::PathSeparator | % TrimEnd(':;')) +
+            @($Env:PSModulePath -split [IO.Path]::PathSeparator | % TrimEnd(':;'))
+        ) -join [IO.Path]::PathSeparator
+        [Environment]::SetEnvironmentVariable("PSModulePath", $Env:PSModulePath, "User")
+        Write-Verbose "New PSModulePath $Env:PSModulePath" -Verbose
     }
 
     Write-Host $($Options | Out-String)

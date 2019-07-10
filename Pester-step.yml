@@ -50,11 +50,18 @@ steps:
 
     if ("${{ parameters.additionalModulePath }}") {
         Write-Verbose "Adding module paths ${{ parameters.additionalModulePath }}" -Verbose
-        $Env:PSModulePath = "${{ parameters.additionalModulePath }}" + ';' + $Env:PSModulePath
-        Write-Verbose "New PSModulePath $Env:PSModulePath" -Verbose
+        $Env:PSModulePath = @(
+            @("${{ parameters.additionalModulePath }}" -split [IO.Path]::PathSeparator | % TrimEnd(':;')) +
+            @($Env:PSModulePath -split [IO.Path]::PathSeparator | % TrimEnd(':;'))
+        ) -join [IO.Path]::PathSeparator
+        [Environment]::SetEnvironmentVariable("PSModulePath", $Env:PSModulePath, "User")
+        Write-Verbose "Current PSModulePath $Env:PSModulePath" -Verbose
     }
+
     Write-Host $($Options | Out-String)
     Write-Host $(Get-Module $(Build.DefinitionName) -List -ErrorAction SilentlyContinue | Out-String)
+    Write-Host "Modules that are already imported:`n$(Get-Module | Out-String)"
+
     Write-Host "##vso[task.setvariable variable=PSPlatform]PowerShell $($PSVersionTable['PSVersion','OS'] -join ' on ')"
     Invoke-Pester @Options
   displayName: Invoke-Pester
