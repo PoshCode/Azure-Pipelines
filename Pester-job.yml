@@ -26,6 +26,9 @@ jobs:
     strategy: ${{ parameters.strategy }}
     pool: ${{ parameters.pool }}
 
+    variables:
+      CodeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+
     steps:
     - checkout: self # re-checkout, because we don't package tests
       fetchDepth: 1  # we only need the current tests
@@ -44,9 +47,12 @@ jobs:
         downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
     - powershell: |
-        $AdditionalModulePaths = @("${{ parameters.artifactDownloadDirectory }}") +
+        $AdditionalModulePaths = @(if("${{ parameters.artifactName }}"){"${{ parameters.artifactDownloadDirectory }}"}) +
             @("${{ join('", "', parameters.additionalModulePaths) }}") -join [IO.Path]::PathSeparator
         Write-Host "##vso[task.setvariable variable=AdditionalModulePaths]$AdditionalModulePaths"
+        if(!"$(CodeCoverageDirectory)" -and "${{ parameters.artifactName }}") {
+            Write-Host "##vso[task.setvariable variable=CodeCoverageDirectory]${{ parameters.artifactDownloadDirectory }}"
+        }
       displayName: 'Combine paths'
 
     - template: Pester-step.yml
@@ -56,6 +62,6 @@ jobs:
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
         additionalModulePaths: $(AdditionalModulePaths)
-        codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        codeCoverageDirectory: $(CodeCoverageDirectory)
         configurationName: 'Pester Unit Tests'
         show: ${{ parameters.show }}

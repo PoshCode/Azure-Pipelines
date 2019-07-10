@@ -23,6 +23,9 @@ jobs:
 
     pool: ${{ parameters.pool }}
 
+    variables:
+      CodeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+
     steps:
     - checkout: self # re-checkout, because we don't package tests
       fetchDepth: 1  # we only need the current tests
@@ -39,12 +42,21 @@ jobs:
         artifactName: ${{ parameters.artifactName }}
         downloadPath: ${{ parameters.artifactDownloadDirectory }}
 
+    - powershell: |
+        $AdditionalModulePaths = @(if("${{ parameters.artifactName }}"){"${{ parameters.artifactDownloadDirectory }}"}) +
+            @("${{ join('", "', parameters.additionalModulePaths) }}") -join [IO.Path]::PathSeparator
+        Write-Host "##vso[task.setvariable variable=AdditionalModulePaths]$AdditionalModulePaths"
+        if(!"$(CodeCoverageDirectory)" -and "${{ parameters.artifactName }}") {
+            Write-Host "##vso[task.setvariable variable=CodeCoverageDirectory]${{ parameters.artifactDownloadDirectory }}"
+        }
+      displayName: 'Combine paths'
+
     - template: Gherkin-step.yml
       parameters:
         pesterVersion: ${{ parameters.pesterVersion }}
         specDirectory: ${{ parameters.specDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.artifactDownloadDirectory }};${{ parameters.additionalModulePath }}
-        codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        additionalModulePaths: $(AdditionalModulePaths)
+        codeCoverageDirectory: $(CodeCoverageDirectory)
         show: ${{ parameters.show }}

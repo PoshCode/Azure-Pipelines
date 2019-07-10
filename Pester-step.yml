@@ -49,7 +49,6 @@ steps:
     }
 
     if ($AdditionalModulePaths = @("${{ join('", "', parameters.additionalModulePaths) }}")) {
-        Write-Verbose "Adding module paths $AdditionalModulePaths" -Verbose
         $Env:PSModulePath = @(
             @($AdditionalModulePaths -split [IO.Path]::PathSeparator | % TrimEnd(':;')) +
             @($Env:PSModulePath -split [IO.Path]::PathSeparator | % TrimEnd(':;'))
@@ -58,24 +57,9 @@ steps:
     }
 
     Write-Host $($Options | Out-String)
-    Write-Host $(Get-Module $(Build.DefinitionName) -List -ErrorAction SilentlyContinue | Out-String)
-    Write-Host "Modules that are already imported:`n$(Get-Module | Out-String)"
-
     Write-Host "##vso[task.setvariable variable=PSPlatform]PowerShell $($PSVersionTable['PSVersion','OS'] -join ' on ')"
     Invoke-Pester @Options
   displayName: Invoke-Pester
-
-- task: PublishTestResults@2
-  displayName: Publish Test Results
-  inputs:
-    testResultsFormat: NUnit
-    testResultsFiles: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
-    buildPlatform: $(PSPlatform)
-    buildConfiguration: ${{ parameters.configurationName }}
-    failTaskOnFailedTests: true
-    ${{ if ne('',parameters.testRunTitle) }}:
-      testRunTitle: ${{ parameters.testRunTitle }}
-  condition: succeededOrFailed()
 
 - task: PublishCodeCoverageResults@1
   displayName: Publish Code Coverage
@@ -88,3 +72,16 @@ steps:
         succeededOrFailed(),
         ne('', '${{ parameters.codeCoverageDirectory }}')
     )
+
+- task: PublishTestResults@2
+  displayName: Publish Test Results
+  inputs:
+    testResultsFormat: NUnit
+    testResultsFiles: '$(Common.TestResultsDirectory)/Test-$(Build.SourceVersion).xml'
+    buildPlatform: $(PSPlatform)
+    buildConfiguration: ${{ parameters.configurationName }}
+    failTaskOnFailedTests: true
+    ${{ if ne('',parameters.testRunTitle) }}:
+      testRunTitle: "${{ parameters.testRunTitle }} on $(PSPlatform)"
+  condition: succeededOrFailed()
+
