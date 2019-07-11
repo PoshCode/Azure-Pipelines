@@ -6,7 +6,7 @@ parameters:
   excludeTag: []
   additionalModulePaths: []
   codeCoverageDirectory: ''
-  testRunTitle: ''
+  testRunTitle: 'Pester'
   show: 'All'
 
 steps:
@@ -57,7 +57,11 @@ steps:
     }
 
     Write-Host $($Options | Out-String)
-    Write-Host "##vso[task.setvariable variable=PSPlatform]PowerShell $($PSVersionTable['PSVersion','OS'] -join ' on ')"
+    if (!$PSVersionTable.OS) {
+        $PSVersionTable.OS = [System.Environment]::OSVersion
+    }
+
+    Write-Host "##vso[task.setvariable variable=PSPlatform]PowerShell $($PSVersionTable['PSVersion', 'OS'] -join ' on ')"
     Invoke-Pester @Options
   displayName: Invoke-Pester
 
@@ -81,7 +85,6 @@ steps:
     buildPlatform: $(PSPlatform)
     buildConfiguration: ${{ parameters.configurationName }}
     failTaskOnFailedTests: true
-    ${{ if ne('',parameters.testRunTitle) }}:
-      testRunTitle: "${{ parameters.testRunTitle }} on $(PSPlatform)"
+    testRunTitle: "${{ parameters.testRunTitle }} on $(PSPlatform)"
   condition: succeededOrFailed()
 

@@ -5,7 +5,7 @@ parameters:
   excludeTag: []
   additionalModulePaths: []
   codeCoverageDirectory: ''
-  testRunTitle: ''
+  testRunTitle: 'Gherkin'
   show: 'All'
 
 steps:
