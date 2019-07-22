@@ -4,7 +4,7 @@ parameters:
   requiredModulesPath: RequiredModules.psd1
   artifactName: ''
   artifactDownloadDirectory: '$(Build.ArtifactStagingDirectory)'
-  additionalModulePath: ''
+  additionalModulePaths: []
   codeCoverageDirectory: ''
   dependsOn: []
   excludeTag: []
@@ -26,6 +26,9 @@ jobs:
     strategy: ${{ parameters.strategy }}
     pool: ${{ parameters.pool }}
 
+    variables:
+      CodeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+
     steps:
     - checkout: self # re-checkout, because we don't package tests
       fetchDepth: 1  # we only need the current tests
@@ -41,7 +44,16 @@ jobs:
       condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.artifactDownloadDirectory }}/$(Build.DefinitionName)
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
+
+    - powershell: |
+        $AdditionalModulePaths = @(if("${{ parameters.artifactName }}"){"${{ parameters.artifactDownloadDirectory }}"}) +
+            @("${{ join('", "', parameters.additionalModulePaths) }}") -join [IO.Path]::PathSeparator
+        Write-Host "##vso[task.setvariable variable=AdditionalModulePaths]$AdditionalModulePaths"
+        if(!"$(CodeCoverageDirectory)" -and "${{ parameters.artifactName }}") {
+            Write-Host "##vso[task.setvariable variable=CodeCoverageDirectory]${{ parameters.artifactDownloadDirectory }}"
+        }
+      displayName: 'Combine paths'
 
     - template: Pester-step.yml
       parameters:
@@ -49,7 +61,7 @@ jobs:
         testsDirectory: ${{ parameters.testsDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.artifactDownloadDirectory }};${{ parameters.additionalModulePath }}
-        codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        additionalModulePaths: $(AdditionalModulePaths)
+        codeCoverageDirectory: $(CodeCoverageDirectory)
         configurationName: 'Pester Unit Tests'
         show: ${{ parameters.show }}

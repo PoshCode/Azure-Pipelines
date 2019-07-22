@@ -4,13 +4,15 @@ parameters:
   requiredModulesPath: RequiredModules.psd1
   artifactName: ''
   artifactDownloadDirectory: '$(Build.ArtifactStagingDirectory)'
-  additionalModulePath: ''
+  additionalModulePaths: []
   codeCoverageDirectory: ''
   dependsOn: []
   includeTag: []
   excludeTag: []
   cleanJob: ''
   show: 'All'
+  strategy:
+    parallel: 1
   pool:
     vmImage: 'windows-2019'
 
@@ -21,7 +23,11 @@ jobs:
       workspace:
         clean: ${{ parameters.cleanJob }}
 
+    strategy: ${{ parameters.strategy }}
     pool: ${{ parameters.pool }}
+
+    variables:
+      CodeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
 
     steps:
     - checkout: self # re-checkout, because we don't package tests
@@ -37,7 +43,16 @@ jobs:
       condition: ${{ ne('', parameters.artifactName)}}
       inputs:
         artifactName: ${{ parameters.artifactName }}
-        downloadPath: ${{ parameters.artifactDownloadDirectory }}/$(Build.DefinitionName)
+        downloadPath: ${{ parameters.artifactDownloadDirectory }}
+
+    - powershell: |
+        $AdditionalModulePaths = @(if("${{ parameters.artifactName }}"){"${{ parameters.artifactDownloadDirectory }}"}) +
+            @("${{ join('", "', parameters.additionalModulePaths) }}") -join [IO.Path]::PathSeparator
+        Write-Host "##vso[task.setvariable variable=AdditionalModulePaths]$AdditionalModulePaths"
+        if(!"$(CodeCoverageDirectory)" -and "${{ parameters.artifactName }}") {
+            Write-Host "##vso[task.setvariable variable=CodeCoverageDirectory]${{ parameters.artifactDownloadDirectory }}"
+        }
+      displayName: 'Combine paths'
 
     - template: Gherkin-step.yml
       parameters:
@@ -45,6 +60,6 @@ jobs:
         specDirectory: ${{ parameters.specDirectory }}
         includeTag: ${{ parameters.includeTag }}
         excludeTag: ${{ parameters.excludeTag }}
-        additionalModulePath: ${{ parameters.artifactDownloadDirectory }};${{ parameters.additionalModulePath }}
-        codeCoverageDirectory: ${{ parameters.codeCoverageDirectory }}
+        additionalModulePaths: $(AdditionalModulePaths)
+        codeCoverageDirectory: $(CodeCoverageDirectory)
         show: ${{ parameters.show }}
