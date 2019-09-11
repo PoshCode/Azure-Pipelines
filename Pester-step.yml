@@ -65,11 +65,19 @@ steps:
     Invoke-Pester @Options
   displayName: Invoke-Pester
 
+- powershell: |
+    #normalize source dir for code coverage
+    $sourceDirs = (@(Get-ChildItem ${{ parameters.codeCoverageDirectory }} -Directory -Recurse | Convert-Path) + "${{ parameters.codeCoverageDirectory }}") -join ";"
+    Write-Host "INFO [task.setvariable variable=CodeCoverageRecurseDirectories]$sourceDirs"
+    Write-Host "##vso[task.setvariable variable=CodeCoverageRecurseDirectories]$sourceDirs"
+    #}
+  displayName: Normalize Source Directory for Code Coverage Report
+
 - task: PublishCodeCoverageResults@1
   displayName: Publish Code Coverage
   inputs:
     summaryFileLocation: '$(Common.TestResultsDirectory)/Coverage-$(Build.SourceVersion).xml'
-    pathToSources: ${{ parameters.codeCoverageDirectory }}
+    pathToSources: $(CodeCoverageRecurseDirectories)
     failIfCoverageEmpty: true
   condition: |
     and(
@@ -87,4 +95,3 @@ steps:
     failTaskOnFailedTests: true
     testRunTitle: "${{ parameters.testRunTitle }} on $(PSPlatform)"
   condition: succeededOrFailed()
-
