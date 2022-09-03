@@ -1,5 +1,7 @@
 # Job and Step Templates for Azure Build Pipelines
 
+### **NOTE:** These may be a little stale, because I'm not using them myself right now...
+
 ## Usage
 
 **First configure a github service connection**
